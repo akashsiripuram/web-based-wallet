@@ -1,103 +1,159 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from "react";
+import { toast, Toaster } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [isExisting, setIsExisting] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [showImportForm, setShowImportForm] = useState(false);
+  const router = useRouter();
+   if(typeof window !== "undefined"){
+        if(localStorage.getItem('recoveryPhrase')) {
+           router.push("/network"); 
+        }
+  
+      }
+  useEffect(() => {
+    // Trigger initial load animation
+    setTimeout(() => setIsLoaded(true), 100);
+    
+    // If transitioning to existing wallet form, add a delay for smooth transition
+    if (isExisting) {
+      setTimeout(() => setShowImportForm(true), 300);
+    }
+  }, [isExisting]);
+  
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const words = text.split(' ');
+      if (words.length !== 12) {
+        toast.error('Please paste a valid 12-word recovery phrase.');
+        return;
+      }
+      const inputs = document.querySelectorAll('input[type="text"]');
+      if (inputs.length !== 12) {
+        toast.error('There should be exactly 12 input fields.');
+        return;
+      }
+      inputs.forEach((input, index) => {
+        input.value = words[index];
+      });
+      localStorage.setItem('recoveryPhrase', text);
+      toast.success('Recovery phrase pasted successfully!');
+    } catch (err) {
+      toast.error('Failed to read clipboard contents. Please try again.');
+      console.error(err);
+    }
+  };
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  if (isExisting) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen font-sans">
+        <Toaster />
+        
+        {/* Header with fade-in */}
+        <div className={`text-center transition-all duration-700 ${showImportForm ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <h1 className="text-4xl font-bold">Secret Recovery Phrase</h1>
+          <p className="text-md mt-4 text-[#969FAF]">Enter or paste your phrase</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        
+        {/* Input grid with staggered animation */}
+        <div className={`grid grid-cols-3 gap-4 mt-6 transition-all duration-700 delay-200 ${showImportForm ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          {Array.from({ length: 12 }, (_, index) => (
+            <div 
+              key={index} 
+              className="flex flex-row items-center border w-[170px] bg-[#14151B] border-black p-2 rounded-xl transform transition-all duration-500 hover:scale-105"
+              style={{
+                animation: showImportForm ? `fadeInScale 0.5s ease-out ${(index * 0.05) + 0.4}s forwards` : 'none',
+                opacity: showImportForm ? 1 : 0
+              }}
+            >
+              <div className="text-sm text-[#969FAF]">{index + 1}</div>
+              <input
+                type="text"
+                className="pl-2 focus:outline-none bg-transparent text-white w-full"
+                required
+              />
+            </div>
+          ))}
+        </div>
+        
+        {/* Buttons with fade-in */}
+        <div className={`flex flex-row items-center mt-6 gap-4 transition-all duration-700 delay-500 ${showImportForm ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <button 
+            className="bg-[#0057EB33] cursor-pointer px-4 py-2 rounded-2xl w-1/2 hover:bg-[#0057EB66] transition-all duration-200 transform hover:scale-105" 
+            onClick={handlePaste}
+          >
+            Paste
+          </button>
+          <button 
+            className="cursor-pointer w-1/2 px-4 py-2 bg-white text-black rounded-2xl w-[200px] hover:bg-gray-200 transition-all duration-200 transform hover:scale-105" 
+            onClick={() => router.push("/network")}
+          >
+            Import
+          </button>
+        </div>
+
+        <style jsx>{`
+          @keyframes fadeInScale {
+            0% {
+              opacity: 0;
+              transform: scale(0.8) translateY(10px);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen font-sans">
+      <Toaster />
+      
+      {/* Welcome header with fade-in */}
+      <div className={`text-center transition-all duration-800 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          Welcome to Zypher
+        </h1>
+        <p className={`mt-4 text-gray-300 transition-all duration-800 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          A sleek web wallet for generating and managing crypto keypairs.
+        </p>
+      </div>
+      
+      {/* Buttons with staggered fade-in */}
+      <div className={`mt-8 flex flex-col items-center transition-all duration-800 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <button 
+          className="mt-6 px-4 py-2 bg-white text-black rounded-2xl w-[200px] cursor-pointer hover:bg-gray-200 transition-all duration-200 transform hover:scale-105 hover:shadow-lg" 
+          onClick={() => router.push("/phrase")}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Create Wallet
+        </button>
+        <button 
+          className="mt-4 px-4 py-2 bg-transparent border border-white text-white rounded-2xl w-[200px] cursor-pointer hover:bg-white hover:text-black transition-all duration-200 transform hover:scale-105 hover:shadow-lg" 
+          onClick={() => setIsExisting(true)}
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Import Existing Wallet
+        </button>
+      </div>
+
+      <style jsx>{`
+        @keyframes fadeInScale {
+          0% {
+            opacity: 0;
+            transform: scale(0.8) translateY(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
