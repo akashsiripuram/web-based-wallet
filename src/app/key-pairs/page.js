@@ -5,7 +5,7 @@ import { derivePath } from "ed25519-hd-key";
 import { Keypair } from "@solana/web3.js";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ethers } from "ethers";
+import { ethers,Wallet, HDNodeWallet } from "ethers";
 function Page() {
   const [mnemonic, setMnemonic] = useState("");
   const [solKeys, setSolKeys] = useState([]);
@@ -57,14 +57,15 @@ function Page() {
       setKeyPairs(updatedSolKeys);
     } else if (network === "eth") {
       const seed = mnemonicToSeedSync(mnemonic);
+       const hdNode = HDNodeWallet.fromSeed(seed);
       let i = ethKeys.length;
       
       const path = `m/44'/60'/${i}'/0'`; // This is the derivation path
-      const derivedSeed = derivePath(path, seed.toString("hex")).key;
-      const secret = Buffer.from(derivedSeed).toString("hex");
-      const publicKey = new ethers.Wallet(secret);
+      const derivedSeed = hdNode.derivePath(path);
+      const wallet = new Wallet(derivedSeed.privateKey);
+      const key = wallet.address;
      
-      const key= publicKey.address;
+      // const key= publicKey.address;
       const updatedEthKeys = [...ethKeys, key];
       setEthKeys(updatedEthKeys);
       if(typeof window !== "undefined"){
